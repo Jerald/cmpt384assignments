@@ -15,7 +15,7 @@ module Types where
 
 -- Template token type from the coursys. We can change if needed.
 data Token = Comment [Char] | NumToken Int | AlphaNumToken [Char] | SpecialToken [Char] |
-             LParen | RParen | LBrak | RBrak | LBrace | RBrace | Equal | Semicolon | Arrow | Quote | Colon deriving Show
+             LParen | RParen | LBrak | RBrak | LBrace | RBrace | Equal | Semicolon | Arrow | Quote | Colon deriving (Show, Eq)
 
 
 -- Tamplate SLisp domains taken from coursys. We can change if needed
@@ -24,24 +24,24 @@ data Token = Comment [Char] | NumToken Int | AlphaNumToken [Char] | SpecialToken
 -- <list>                   ::= '(' {<S-expression>} ')'
 -- <numeric-atom>           = -?[0-9]+
 -- <symbolic-atom>          = [A-Za-z](-?[A-Za-z0-9])*|[+-*/<>=&|!@#$%?:]+
-data SExpression = NumAtom Int | SymAtom [Char] | List [SExpression]
+data SExpression = NumAtom Int | SymAtom [Char] | List [SExpression] deriving Show
 
 -- Some grouping of alpha-numeric things which starts with a letter and can contain dashes
 -- Defines: <identifier>    = [A-Za-z](-?[A-Za-z0-9])*
 type Identifier = [Char]
 
 -- <clause>                 ::= <expression> '-->' <expression>
-data CondClause = Clause SmLispExpr SmLispExpr
+data CondClause = Clause SmLispExpr SmLispExpr deriving Show
 
 -- <local-definition>       ::= <identifier> '=' <expression>
-data LocalDef = Binding Identifier SmLispExpr
+data LocalDef = Binding Identifier SmLispExpr deriving Show
 
 -- Defines: <expression>    ::= <value> | <variable> | <function-call> | <conditional-expression> | <let-expression>
 -- Note: <value> is symantically equivalent to <S-expression>, so one is used in place of <value>
 -- <function-call>          ::= <identifier> '[' <expression> {';' <expression>} ']'
 -- <conditional-expression> ::= '[' <clause> {';' <clause>} ']'
 -- <let-expression>         ::= '{' <local-definition> {';' <local-definition>} ':' <expression> '}'
-data SmLispExpr = SExpr SExpression | Variable Identifier | FnCall Identifier [SmLispExpr] | CondExpr [CondClause] | LetExpr [LocalDef] SmLispExpr
+data SmLispExpr = SExpr SExpression | Variable Identifier | FnCall Identifier [SmLispExpr] | CondExpr [CondClause] | LetExpr [LocalDef] SmLispExpr deriving Show
 -- Conditional Expression: returns the first LHS value which evaluates to T, or returns null if any LHS evaluates to a non-boolean value. Returns false if no LHS is true.
 -- Let Expression: evaluates the provided expression in the context of the local-definitions being applied. If any definition evaluates to null, returns null.
 
@@ -49,7 +49,7 @@ data SmLispExpr = SExpr SExpression | Variable Identifier | FnCall Identifier [S
 -- <constant-definition>    ::= [<comment>] <identifier> '=' <expression>
 -- <function-definition>    ::= [<comment>] <identifier> '[' <parameter> {';' <parameter> }']' '=' <expression>
 -- <parameter>              ::= <identifier>
-data Definition = ConstantDef Identifier SmLispExpr | FunctionDef Identifier [Identifier] SmLispExpr
+data Definition = ConstantDef Identifier SmLispExpr | FunctionDef Identifier [Identifier] SmLispExpr deriving Show
 
 -- A SLisp "program" is simply defined as a list of definitions.
 -- This "program" is then used as the context by which to evaluate the literal passed program.
