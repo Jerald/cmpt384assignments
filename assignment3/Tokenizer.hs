@@ -7,36 +7,41 @@
 
 import System.Environment
 import System.IO
-
+import Data.Maybe
+import Data.Char
 import Types
 parseString :: [Char] -> Maybe (Token, [Char])
-parseNumeral :: [Char] -> [Char]
+parseMain :: [Char] -> Maybe [Token]
+
+
+parseAlphaNum :: [Char] -> [Char]
 parseSymbol :: [Char] -> [Char]
+parseNumeral :: [Char] -> [Char]
 
-isInt :: Char -> Bool
-isInt(a)
-  | a == '1' || a == '2' || a == '3' || a == '4' || a == '5' = True
-  | a == '6' || a == '7' || a == '8' || a == '9' || a == '0' = True
-  | otherwise = False
-
-isSymbol :: Char -> Bool
-isSymbol(a)
+isSpeSymbol :: Char -> Bool
+isSpeSymbol(a)
   | a == '+' || a == '-' || a == '*' || a == '/' || a == '<' || a == '>' || a == '&' || a == '|' || a == '@' = True
   | a == '#' || a == '$' || a == '%' || a == '?' || a == ':' = True
   | otherwise = False
 
 parseSymbol [] = ""
 parseSymbol (a:rest)
-  | isSymbol(a) = [a] ++ parseSymbol(rest)
+  | isSpeSymbol(a) = [a] ++ parseSymbol(rest)
   | otherwise   = ""
 
 parseNumeral [] = ""
 parseNumeral (a:rest)
-  | isInt(a) = [a] ++ parseNumeral(rest)
+  | isDigit(a) = [a] ++ parseNumeral(rest)
   | otherwise = ""
 
+parseAlphaNum [] = ""
+parseAlphaNum (a:rest)
+  | isDigit(a) || isLetter(a) = [a] ++ parseAlphaNum(rest)
+  | otherwise = ""
+
+parseString []= Nothing
 parseString ('-':rest)
-  | isInt(head rest)  = Just (NumToken (negate (read (parseNumeral(rest)) :: Int)), (drop (length (parseNumeral(rest))) rest))
+  | isDigit(head rest)  = Just (NumToken (negate (read (parseNumeral(rest)) :: Int)), (drop (length (parseNumeral(rest))) rest))
   | head rest == '-' && rest !! 1 == '>' = Just (Arrow, drop 2 rest)
   | otherwise = Just (SpecialToken ("-" ++ (parseSymbol(rest))), (drop (length (parseSymbol(rest))) rest))
 
@@ -52,5 +57,13 @@ parseString (a:rest)
   | a == '=' = Just (Equal,rest)
   | a == '"' = Just (Quote,rest)
   | a == ':' = Just (Colon,rest)
-  | isSymbol(a) = Just (SpecialToken ([a]++(parseSymbol(rest))) , (drop (length (parseSymbol(rest))) rest))
+  | isSpeSymbol(a)  = Just (SpecialToken ([a]++(parseSymbol(rest))) , (drop (length (parseSymbol(rest))) rest))
+  | isDigit(a)      = Just (NumToken (read (parseNumeral([a] ++ rest)) :: Int), (drop (length (parseNumeral(rest))) rest))
+  | isLetter(a)     = Just (AlphaNumToken ([a]++(parseAlphaNum(rest))) , (drop (length (parseAlphaNum(rest))) rest))
+parseToken :: [Char] -> Maybe [Token]
+parseToken s = do
+  (tok1,rest) <- parseString(s)
+  return ([tok1] ++ (fromMaybe [] (parseToken(rest))))
 
+parseMain s = parseToken(s)
+--  return ([tok1]++tok2
