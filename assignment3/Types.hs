@@ -31,7 +31,7 @@ data SExpression = NumAtom Int | SymAtom [Char] | List [SExpression]
 type Identifier = [Char]
 
 -- <clause>                 ::= <expression> '-->' <expression>
-data CondClause = Clause SMLispExpr SMLispExpr
+data CondClause = Clause SmLispExpr SmLispExpr
 
 -- <local-definition>       ::= <identifier> '=' <expression>
 data LocalDef = Binding Identifier SmLispExpr
