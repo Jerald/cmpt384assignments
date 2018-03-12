@@ -15,7 +15,7 @@ module Types where
 
 -- Template token type from the coursys. We can change if needed.
 data Token = Comment [Char] | NumToken Int | AlphaNumToken [Char] | SpecialToken [Char] |
-             Lparen | Rparen | Lbrak | Rbrak | LBrace | RBrace | Equal | Semicolon | Arrow | Quote | Colon deriving Show
+             LParen | RParen | LBrak | RBrak | LBrace | RBrace | Equal | Semicolon | Arrow | Quote | Colon deriving Show
 
 
 -- Tamplate SLisp domains taken from coursys. We can change if needed
