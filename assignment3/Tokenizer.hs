@@ -39,10 +39,18 @@ tokenizeNumeral (a:rest)
   | isDigit(a) = [a] ++ tokenizeNumeral(rest)
   | otherwise = ""
 
-tokenizeAlphaNum [] = ""
 tokenizeAlphaNum (a:b:rest)
   | isDigit(a) || isLetter(a)  = [a] ++ tokenizeAlphaNum([b]++rest)
   | a == '-'  && (isDigit(b) || isLetter(b)) = [a]++[b]++ tokenizeAlphaNum(rest)
+  | otherwise = ""
+
+tokenizeAlphaNum (a:b)
+  | isDigit(a) || isLetter(a)  = [a] ++ tokenizeAlphaNum(b)
+  | a == '-'  && (isDigit(head b) || isLetter(head b)) = [a]++b
+  | otherwise = ""
+
+tokenizeAlphaNum(a)
+  | isDigit(head a) || isLetter(head a) = a
   | otherwise = ""
 
 tokenizeComment [] = ""
@@ -63,15 +71,16 @@ tokenizeString ('\n':rest)
 
 tokenizeString (a:rest)
   | a == ';' || a== ' ' = Just ([],rest)
-  | a == '(' = Just ([LBrak],rest)
-  | a == ')' = Just ([RBrak],rest)
-  | a == '[' = Just ([LBrace],rest)
-  | a == ']' = Just ([RBrace],rest)
-  | a == '{' = Just ([LParen],rest)
-  | a == '}' = Just ([RParen],rest)
+  | a == '(' = Just ([LParen],rest)
+  | a == ')' = Just ([RParen],rest)
+  | a == '[' = Just ([LBrack],rest)
+  | a == ']' = Just ([RBrack],rest)
+  | a == '{' = Just ([LBrace],rest)
+  | a == '}' = Just ([RBrace],rest)
   | a == '=' = Just ([Equal],rest)
   | a == '"' = Just ([Quote],rest)
   | a == ':' = Just ([Colon],rest)
+  | a == ';' = Just ([Semicolon],rest)
   | isSpeSymbol(a)  = Just ([SpecialToken ([a]++(tokenizeSymbol(rest)))] , (drop (length (tokenizeSymbol(rest))) rest))
   | isDigit(a)      = Just ([NumToken (read (tokenizeNumeral([a] ++ rest)) :: Int)], (drop (length (tokenizeNumeral(rest))) rest))
   | isLetter(a)     = Just ([AlphaNumToken ([a]++(tokenizeAlphaNum(rest)))] , (drop (length (tokenizeAlphaNum(rest))) rest))
