@@ -70,7 +70,6 @@ tokenizeString ('\n':rest)
   | otherwise  = Just ([], rest)
 
 tokenizeString (a:rest)
-  | a == ';' || a== ' ' = Just ([],rest)
   | a == '(' = Just ([LParen],rest)
   | a == ')' = Just ([RParen],rest)
   | a == '[' = Just ([LBrack],rest)
