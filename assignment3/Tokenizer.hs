@@ -29,14 +29,22 @@ isSpeSymbol(a)
   | a == '#' || a == '$' || a == '%' || a == '?' || a == ':' = True
   | otherwise = False
 
-tokenizeSymbol [] = ""
 tokenizeSymbol (a:rest)
   | isSpeSymbol(a) = [a] ++ tokenizeSymbol(rest)
   | otherwise   = ""
 
-tokenizeNumeral [] = ""
+tokenizeSymbol (a)
+  | a == [] = ""
+  | isSpeSymbol(head a) = a
+  | otherwise = ""
+
 tokenizeNumeral (a:rest)
   | isDigit(a) = [a] ++ tokenizeNumeral(rest)
+  | otherwise = ""
+
+tokenizeNumeral (a)
+  | a == []   = ""
+  | isDigit(head a) = a
   | otherwise = ""
 
 tokenizeAlphaNum (a:b:rest)
@@ -46,10 +54,12 @@ tokenizeAlphaNum (a:b:rest)
 
 tokenizeAlphaNum (a:b)
   | isDigit(a) || isLetter(a)  = [a] ++ tokenizeAlphaNum(b)
+  | b == []   = ""
   | a == '-'  && (isDigit(head b) || isLetter(head b)) = [a]++b
   | otherwise = ""
 
 tokenizeAlphaNum(a)
+  | a == []   = ""
   | isDigit(head a) || isLetter(head a) = a
   | otherwise = ""
 
