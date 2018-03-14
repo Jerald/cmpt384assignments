@@ -14,6 +14,21 @@ module Types where
 -- Square brackets, [], are the option operator, or the equivalent of the regex ()?
 
 -- Template token type from the coursys. We can change if needed.
+-- comment: (^;;;.*$)+
+-- numeral: -?[0-9]+
+-- alphanumeric_symbol: [A-Za-z](-?[A-Za-z0-9])*
+-- special_symbol: [+-*/<>=&|!@#$%?:]+
+-- lparen: \(
+-- rparen: \)
+-- lbrak: \[
+-- rbrak: \]
+-- lbrace: \{
+-- rbrace: \}
+-- equal: =
+-- semicolon: ;
+-- arrow: -->
+-- quote-mark: "
+-- colon: :
 data Token = Comment [Char] | NumToken Int | AlphaNumToken [Char] | SpecialToken [Char] |
              LParen | RParen | LBrack | RBrack | LBrace | RBrace | Equal | Semicolon | Arrow | Quote | Colon deriving (Show, Eq)
 
@@ -37,7 +52,8 @@ data CondClause = Clause SmLispExpr SmLispExpr deriving Show
 data LocalDef = Binding Identifier SmLispExpr deriving Show
 
 -- Defines: <expression>    ::= <value> | <variable> | <function-call> | <conditional-expression> | <let-expression>
--- Note: <value> is symantically equivalent to <S-expression>, so one is used in place of <value>
+-- <value>                  ::= <numeric-atom> | '"' <symbolic-atom> '"' | <list>
+-- Note: <value> is nearly equivalent to <S-expression>, so one is used in place of <value>
 -- <function-call>          ::= <identifier> '[' <expression> {';' <expression>} ']'
 -- <conditional-expression> ::= '[' <clause> {';' <clause>} ']'
 -- <let-expression>         ::= '{' <local-definition> {';' <local-definition>} ':' <expression> '}'
