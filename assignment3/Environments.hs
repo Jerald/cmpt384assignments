@@ -12,11 +12,26 @@ import Types
 --To represent environments for our small lisp interpreter, we will be using a binary search tree, with each
 --node represented as a key-value pair
 
-data Tree a = Empty | Branch (Tree a) (a, [Char]) (Tree a) deriving (Show, Eq)
+data BSTree a = Tip | Node (BSTree a) (a, a) (BSTree a) deriving (Show, Eq)
 
---treeInsert:: (Ord a) => (a, [Char]) -> Tree a -> Tree a
+treeInsert:: (Ord a) => BSTree a -> (a, a) -> BSTree a
+treeInsert Tip (new_key, new_value) = Node Tip (new_key, new_value) Tip
+treeInsert (Node l (cur_key, cur_value) r) (new_key, new_value)
+  | new_key <= cur_key = Node (treeInsert l (new_key, new_value)) (cur_key, cur_value) r
+  | otherwise = Node l (cur_key, cur_value) (treeInsert r (new_key, new_value))
 
-
+treeLookup:: (Ord a) => BSTree a -> a -> Maybe (a)
+treeLookup Tip key = Nothing
+treeLookup (Node l (cur_key, cur_value) r) key
+  | key == cur_key = Just cur_value
+  | key <= cur_key = treeLookup l key
+  | otherwise = treeLookup r key
+  
+treeToList:: BSTree a -> [(a, a)]
+treeToList tree = case tree of
+  Tip -> []
+  Node l v r -> treeToList(l) ++ [v] ++ treeToList(r)
+  
 --Implementing the 20 primitive functions of small lisp
 
 apply_symbolp :: [SExpression] -> Maybe (Bool)
