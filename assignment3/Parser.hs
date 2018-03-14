@@ -69,6 +69,8 @@ parseValue tx = wrapValue (parseSExpression tx)
 
 parseSmLispExpr [] = (Nothing, [])
 
+parseSmLispExpr ((Comment t):tx) = tx
+
 -- Matching numeric atoms in SExpressions
 parseSmLispExpr (num@(NumToken t):tx) =
     typeWrap SExpr (parseSExpression (num:tx))
