@@ -26,7 +26,7 @@ tokenizeNumeral :: [Char] -> [Char]
 isSpeSymbol :: Char -> Bool
 isSpeSymbol(a)
   | a == '+' || a == '-' || a == '*' || a == '/' || a == '<' || a == '>' || a == '&' || a == '|' || a == '@' = True
-  | a == '#' || a == '$' || a == '%' || a == '?' || a == ':' = True
+  | a == '=' || a == '!'|| a == '#' || a == '$' || a == '%' || a == '?' || a == ':' = True
   | otherwise = False
 
 tokenizeSymbol (a:rest)
