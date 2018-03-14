@@ -109,6 +109,9 @@ parseSmLispExpr (LBrace:tx) =
                                 (Nothing, morer) -> (Nothing, morer)
         (Nothing, more) -> (Nothing, more)
 
+parseSmLispExpr tx =
+    typeWrap SExpr (parseSExpression tx)
+
 
         
 -- Doesn't use parseIdentifier, MAY cause an issue because of this
