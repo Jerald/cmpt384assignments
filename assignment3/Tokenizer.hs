@@ -76,7 +76,7 @@ tokenizeString ('-':rest)
 
 tokenizeString ('\n':rest)
   | length rest < 3 = Just ([],rest)
-  | (head rest) == ';' && rest !! 1 == ';' && rest !! 2 == ';' && rest !! 3 /= '\n' = Just ([Comment (drop 3 (tokenizeComment(rest)))], (drop (length (tokenizeComment(rest))) rest))
+  | (head rest) == ';' && rest !! 1 == ';' && rest !! 2 == ';' = Just ([Comment (drop 3 (tokenizeComment(rest)))], (drop (length (tokenizeComment(rest))) rest))
   | otherwise  = Just ([], rest)
 
 tokenizeString (a:rest)
