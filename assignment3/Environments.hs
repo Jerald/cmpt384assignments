@@ -130,13 +130,21 @@ explode_extend [SymAtom (x:rest)]
   | otherwise = (SymAtom [x] : explode_extend([SymAtom rest]))
   
 ---------------------------------------------------------------------------
+atomToStr:: SExpression -> [Char]
+atomToStr (SymAtom x) = x
+atomToStr (NumAtom x) = show x
 
---apply_implode :: [SExpression] -> Maybe (SExpression)
---apply_implode [List (x:rest)]
---  | apply_numberp[x] = Nothing
---  | apply_listp [x] == True = Nothing
---  | otherwise = Just (SymAtom (x))
---apply_implode [x] = Nothing
+apply_implode :: [SExpression] -> Maybe (SExpression)
+--implode_extend :: [SExpression] -> [SExpression]
+
+apply_implode [List (x)]
+  | fromJust (apply_numberp[(head x)]) = Nothing
+  | elem (Just True) (map apply_listp (map (:[]) x))  = Nothing
+--  | otherwise = Just (SymAtom (intercalate "" [atomToStr x : implode_extend([List rest])]))
+apply_implode [x] = Nothing
+
+--implode_extend [List (x:rest)]
+--  | rest == [] = [
   
 -----------------------------------------------------------------------------
 
