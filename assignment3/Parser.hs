@@ -5,6 +5,8 @@
 --Should use SLisp data types defined elsewhere and parse into said types
 --Most likely needs one function per said type
 
+-- parseSmLispProgram builds out a definition list. Use it for building environments.
+-- parseSmLispExpr parses an SLisp expression. Primarily evaluation function.
 
 module Parser where
 
@@ -28,7 +30,7 @@ parseSExpression ((SpecialToken t):tx) = (Just (SymAtom t), tx)
 
 parseSExpression (LParen:t:tx)
     | t == RParen           = (Just (List []), tx) -- We may just be able to get rid of this
-    | otherwise             = extendList (Just (List [])) tx
+    | otherwise             = extendList (Just (List [])) (t:tx)
 
 -- End case, might need to change
 parseSExpression tx = (Nothing, tx)
@@ -38,13 +40,13 @@ extendList (Just (List list)) tx =
     case parseSExpression(tx) of
         (Just sexpr, more)  -> extendList (Just (List (list ++ sexpr:[]))) more
         (Nothing, more)     -> (Nothing, more)
+extendList _ tx = (Nothing, tx)
 
 --------------------------------------------------------------------
 
 parseIdentifier     :: [Token] -> (Maybe Identifier, [Token])
 -- parseLocalDef       :: [Token] -> (Maybe LocalDef, [Token])
 parseSmLispExpr     :: [Token] -> (Maybe SmLispExpr, [Token])
-parseValue          :: [Token] -> (Maybe SmLispExpr, [Token])
 
 parseIdentifier []                      = (Nothing, [])
 parseIdentifier ((AlphaNumToken t):tx)  = (Just t, tx)
@@ -55,21 +57,10 @@ parseIdentifier tx                      = (Nothing, tx)
 -- parseLocalDef -- Deal with this as a part of SmLispExpr
 -- parseLocalDef tx                        = (Nothing, tx)
 
--- Helper function which wraps func output to SExpr
-wrapValue (Just sexpr, tx) = (Just (SExpr sexpr), tx)
-wrapValue (Nothing, tx) = (Nothing, tx)
-
-parseValue []                           = (Nothing, [])
-
-
-    -- parseValue ((SpecialToken t):tx) = -- Not sure how to cover these special cases...
-parseValue tx = wrapValue (parseSExpression tx)
-
--- matchWrap :: a -> a -> bool
-
 parseSmLispExpr [] = (Nothing, [])
 
-parseSmLispExpr ((Comment t):tx) = tx
+parseSmLispExpr ((Comment t):tx) =
+    parseSmLispExpr tx
 
 -- Matching numeric atoms in SExpressions
 parseSmLispExpr (num@(NumToken t):tx) =
@@ -106,29 +97,34 @@ parseSmLispExpr (LBrack:tx) =
 -- Matching LBrace for let expression
 parseSmLispExpr (LBrace:tx) =
     case buildLocalDefs tx [] of
-        (Just defs, more) -> case parseSmLispExpr more of
-                                (Just expr, morer) -> (Just (LetExpr defs expr), morer)
-                                (Nothing, morer) -> (Nothing, morer)
+        (Just defs, more) -> endLetExpr more defs
         (Nothing, more) -> (Nothing, more)
 
+-- End case
 parseSmLispExpr tx =
     typeWrap SExpr (parseSExpression tx)
 
 
+endLetExpr :: [Token] -> [LocalDef] -> (Maybe SmLispExpr, [Token])
+endLetExpr tx defs =
+    case parseSmLispExpr tx of
+        (Just expr, more) -> (Just (LetExpr defs expr), more)
+        (Nothing, more) -> (Nothing, more)    
         
--- Doesn't use parseIdentifier, MAY cause an issue because of this
-parseLocalDef :: [Token] -> (Maybe [LocalDef], [Token])
+parseLocalDef :: [Token] -> (Maybe LocalDef, [Token])
 parseLocalDef ((AlphaNumToken alph):Equal:tx) = 
     case parseSmLispExpr tx of
-        (Just expr, more) -> (Just ((Binding alph expr):[]), more)
+        (Just expr, more) -> (Just (Binding ident expr), more)
         (Nothing, more) -> (Nothing, more)
+    where (Just ident, _) = parseIdentifier ((AlphaNumToken alph):[])
+
 parseLocalDef tx = (Nothing, tx)
 
 buildLocalDefs :: [Token] -> [LocalDef] -> (Maybe [LocalDef], [Token])
 buildLocalDefs (Colon:tx) defs = (Just defs, tx)
 buildLocalDefs tx defs = 
     case parseLocalDef tx of
-        (Just ndef, more) -> buildLocalDefs more (defs ++ ndef)
+        (Just ndef, more) -> buildLocalDefs more (defs ++ (ndef:[]))
         (Nothing, more) -> (Nothing, more)
 
 -- Takes the token stream, the func name, and the arg list so far
@@ -140,7 +136,6 @@ extendFuncArgs (Semicolon:tx) ident args =
 
 extendFuncArgs (RBrack:tx) ident args = (Just (FnCall ident args), tx)
 extendFuncArgs tx _ _ = (Nothing, tx)
-
 
 
 parseCondClause     :: [Token] -> (Maybe CondClause, [Token])
@@ -164,10 +159,8 @@ extendCondExpr (Semicolon:tx) (CondExpr clauses) =
     case parseCondClause tx of
         (Just clause, more)    -> extendCondExpr more (CondExpr (clauses ++ (clause:[])))
         (Nothing, more)        -> (Nothing, more) 
-extendCondExpr (RBrack:tx) (CondExpr clauses) = (Just (CondExpr clauses), tx) 
-
-
-
+extendCondExpr (RBrack:tx) (CondExpr clauses) = (Just (CondExpr clauses), tx)
+extendCondExpr tx expr = (Nothing, tx)
 
 
 -- parseSmLispExpr tx = typeWrap SExpr (parseSExpression tx)
@@ -191,8 +184,9 @@ parseConstDef       :: [Token] -> Identifier -> (Maybe Definition, [Token])
 parseFuncDef        :: [Token] -> Identifier -> (Maybe Definition, [Token])
 extendParam         :: [Token] -> [Identifier] -> (Maybe Definition, [Token])
 
---Entry point for Parser.hs
+-- Entry point for Parser.hs
 parseSmLispProgram (Just tx) = buildDefinition tx []
+parseSmLispProgram (Nothing) = (Nothing, [])
 
 buildDefinition tx program =
     case (parseDefinition tx) of
@@ -232,5 +226,9 @@ extendParam (RBrack:Equal:tx) params =
         (Just expr, more) -> (Just (FunctionDef (head params) (tail params) expr), more) 
         (Nothing, more)   -> (Nothing, more) -- Null case
     
+extendParam tx params = (Nothing, tx)
 
+parseExpression :: Maybe [Token] -> (Maybe SmLispExpr, [Token])
+parseExpression (Just tx) = parseSmLispExpr tx
+parseExpression (Nothing) = (Nothing, [])
 -- parseMain :: [Token] -> [SmLispProgram]
