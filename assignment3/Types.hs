@@ -30,7 +30,7 @@ module Types where
 -- quote-mark: "
 -- colon: :
 data Token = Comment [Char] | NumToken Int | AlphaNumToken [Char] | SpecialToken [Char] |
-             LParen | RParen | LBrack | RBrack | LBrace | RBrace | Equal | Semicolon | Arrow | Quote | Colon deriving (Show, Eq)
+             LParen | RParen | LBrack | RBrack | LBrace | RBrace | Equal | Semicolon | Arrow | Quote | Colon | Exclam | At deriving (Show, Eq)
 
 
 -- Tamplate SLisp domains taken from coursys. We can change if needed
