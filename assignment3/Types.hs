@@ -57,7 +57,10 @@ data LocalDef = Binding Identifier SmLispExpr deriving Show
 -- <function-call>          ::= <identifier> '[' <expression> {';' <expression>} ']'
 -- <conditional-expression> ::= '[' <clause> {';' <clause>} ']'
 -- <let-expression>         ::= '{' <local-definition> {';' <local-definition>} ':' <expression> '}'
-data SmLispExpr = SExpr SExpression | Variable Identifier | FnCall Identifier [SmLispExpr] | CondExpr [CondClause] | LetExpr [LocalDef] SmLispExpr deriving Show
+-- <map-expression>         ::= '@' <function-name> '[' expression> {';' <expression>} ']'
+-- <reduce-expression>      ::= '!' <function-name> '[' <expression> ']'
+data SmLispExpr = SExpr SExpression | Variable Identifier | FnCall Identifier [SmLispExpr] | CondExpr [CondClause] | LetExpr [LocalDef] SmLispExpr
+                    | MapExpr Identifier [SExpression] | ReduceExpr Identifier SmLispExpr  deriving Show
 -- Conditional Expression: returns the first LHS value which evaluates to T, or returns null if any LHS evaluates to a non-boolean value. Returns false if no LHS is true.
 -- Let Expression: evaluates the provided expression in the context of the local-definitions being applied. If any definition evaluates to null, returns null.
 
