@@ -49,3 +49,9 @@ main = do
     print (tokenizeMain(['\n'] ++srcText))
     -- Output from Parser
     print (parseSExpression(fromMaybe [] (tokenizeMain(['\n'] ++srcText))))
+
+interactive :: [Char] -> (Maybe SmLispExpr, [Token])
+interactive tx =
+    case tokenizeMain tx of
+        (Just tokens)    -> parseSmLispExpr tokens
+        (Nothing)        -> (Nothing, [])

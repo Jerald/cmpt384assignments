@@ -19,28 +19,32 @@ import Data.Typeable
 import Types
     
 parseSExpression    :: [Token] -> (Maybe SExpression, [Token])
-extendList          :: Maybe SExpression -> [Token] -> (Maybe SExpression, [Token])
-
-parseSExpression [] = (Nothing, [])
+extendList          :: [Token] -> SExpression -> (Maybe SExpression, [Token])
 
 parseSExpression ((NumToken t):tx) = (Just (NumAtom t), tx)
 
 parseSExpression ((AlphaNumToken t):tx) = (Just (SymAtom t), tx)
 parseSExpression ((SpecialToken t):tx) = (Just (SymAtom t), tx)
 
-parseSExpression (LParen:t:tx)
-    | t == RParen           = (Just (List []), tx) -- We may just be able to get rid of this
-    | otherwise             = extendList (Just (List [])) (t:tx)
+parseSExpression (LParen:t:tx) = parseList (LParen:t:tx)
 
--- End case, might need to change
 parseSExpression tx = (Nothing, tx)
 
-extendList (Just list) (RParen:tx) = (Just list, tx)
-extendList (Just (List list)) tx = 
-    case parseSExpression(tx) of
-        (Just sexpr, more)  -> extendList (Just (List (list ++ sexpr:[]))) more
+
+parseList :: [Token] -> (Maybe SExpression, [Token])
+parseList (LParen:t:tx)
+    | t == RParen           = (Just (List []), tx) -- We may just be able to get rid of this
+    | otherwise             = extendList (t:tx) (List [])
+parseList tx = (Nothing, tx)
+
+-- End case, might need to change
+
+extendList (RParen:tx) list = (Just list, tx)
+extendList tx (List list) = 
+    case parseSExpression tx of
+        (Just sexpr, more)  -> extendList more (List (list ++ sexpr:[]))
         (Nothing, more)     -> (Nothing, more)
-extendList _ tx = (Nothing, tx)
+extendList tx _ = (Nothing, tx)
 
 --------------------------------------------------------------------
 
@@ -96,14 +100,47 @@ parseSmLispExpr (LBrack:tx) =
 
 -- Matching LBrace for let expression
 parseSmLispExpr (LBrace:tx) =
-    case buildLocalDefs tx [] of
+    case buildLocalDefs (Semicolon:tx) [] of
         (Just defs, more) -> endLetExpr more defs
         (Nothing, more) -> (Nothing, more)
+
+parseSmLispExpr (t:(AlphaNumToken ident):LBrack:tx)
+    | t == At       = parseMap tx ident
+    | t == Exclam   = parseReduce tx ident
 
 -- End case
 parseSmLispExpr tx =
     typeWrap SExpr (parseSExpression tx)
 
+parseReduce :: [Token] -> Identifier -> (Maybe SmLispExpr, [Token])
+parseReduce tx ident = 
+    case parseSmLispExpr tx of
+        (Just expr, RBrack:more)    -> (Just (ReduceExpr ident expr), more)
+        (_, more)                   -> (Nothing, more)
+
+parseMap    :: [Token] -> Identifier -> (Maybe SmLispExpr, [Token])
+parseMap tx ident =
+    case extendMapArgs (Semicolon:tx) [] of
+        (Just args, more) -> (Just (MapExpr ident args), more)
+                            -- if (verifyArgLen args)
+                            --     then (Just (MapExpr ident args), more)
+                            --     else (Nothing, [AlphaNumToken "Death"])
+        (Nothing, more) -> (Nothing, more)
+        
+extendMapArgs :: [Token] -> [SExpression] -> (Maybe [SExpression], [Token])
+extendMapArgs (RBrack:tx) args = (Just args, tx)
+extendMapArgs (Semicolon:tx) args =
+    case parseList tx of
+        (Just sexpr, more) -> extendMapArgs more (args ++ (sexpr:[]))
+        (Nothing, more) -> (Nothing, more)
+extendMapArgs tx args = (Nothing, tx)
+
+verifyArgLen :: [SExpression] -> Bool
+verifyArgLen (args) =
+    let checked = [(List x) | (List x) <- (tail args), length x == length first]
+    in length checked == length args
+    where (List first) = head args
+-- verifyArgLen args = True
 
 endLetExpr :: [Token] -> [LocalDef] -> (Maybe SmLispExpr, [Token])
 endLetExpr tx defs =
@@ -122,10 +159,11 @@ parseLocalDef tx = (Nothing, tx)
 
 buildLocalDefs :: [Token] -> [LocalDef] -> (Maybe [LocalDef], [Token])
 buildLocalDefs (Colon:tx) defs = (Just defs, tx)
-buildLocalDefs tx defs = 
+buildLocalDefs (Semicolon:tx) defs = 
     case parseLocalDef tx of
-        (Just ndef, more) -> buildLocalDefs more (defs ++ (ndef:[]))
+        (Just ndef, (more)) -> buildLocalDefs more (defs ++ (ndef:[]))
         (Nothing, more) -> (Nothing, more)
+buildLocalDefs tx defs = (Nothing, tx)
 
 -- Takes the token stream, the func name, and the arg list so far
 extendFuncArgs :: [Token] -> Identifier -> [SmLispExpr] -> (Maybe SmLispExpr, [Token])
