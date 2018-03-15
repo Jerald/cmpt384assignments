@@ -34,38 +34,43 @@ treeToList tree = case tree of
   
 --Implementing the 20 primitive functions of small lisp
 
-apply_symbolp :: [SExpression] -> Maybe (Bool)
-apply_symbolp [(SymAtom a)] = Just (True)
-apply_symbolp [a] = Just (False)
+instance Eq SExpression where
+  (SymAtom x) == (SymAtom y) = x == y
 
-apply_numberp :: [SExpression] -> Maybe (Bool)
-apply_numberp [(NumAtom a)] = Just (True)
-apply_numberp [a] = Just (False)
+apply_symbolp :: [SExpression] -> Maybe (SExpression)
+apply_symbolp [(SymAtom a)] = Just (SymAtom "T")
+apply_symbolp [a] = Just (SymAtom "F")
+
+apply_numberp :: [SExpression] -> Maybe (SExpression)
+apply_numberp [(NumAtom a)] = Just (SymAtom "T")
+apply_numberp [a] = Just (SymAtom "F")
   
-apply_listp :: [SExpression] -> Maybe (Bool)
-apply_listp [(List a)] = Just (True)
-apply_listp [a] = Just (False)
+apply_listp :: [SExpression] -> Maybe (SExpression)
+apply_listp [(List a)] = Just (SymAtom "T")
+apply_listp [a] = Just (SymAtom "F")
 
-apply_endp :: [SExpression] -> Maybe(Bool)
+apply_endp :: [SExpression] -> Maybe(SExpression)
 apply_endp [(List a)]
-  | null(a) = Just (True)
-  | otherwise = Just (False)
+  | null(a) = Just (SymAtom "T")
+  | otherwise = Just (SymAtom "F")
 apply_endp [a] = Nothing
 
 apply_first :: [SExpression] -> Maybe (SExpression)
 apply_first [List (a:rest)] = Just a
 apply_first [a] = Nothing
 
-apply_rest :: [SExpression] -> Maybe ([SExpression])
-apply_rest [List (a:rest)] = Just rest
+apply_rest :: [SExpression] -> Maybe (SExpression)
+apply_rest [List (a:rest)] = Just (List rest)
 apply_rest [a] = Nothing
 
-apply_cons :: [SExpression] -> Maybe ([SExpression])
-apply_cons [x, List y] = Just (x:y)
+apply_cons :: [SExpression] -> Maybe (SExpression)
+apply_cons [x, List y] = Just (List (x:y))
 apply_cons [x, y] = Nothing
 
-apply_eq :: [SExpression] -> Maybe (Bool)
-apply_eq [SymAtom x, SymAtom y] = Just (x==y)
+apply_eq :: [SExpression] -> Maybe (SExpression)
+apply_eq [SymAtom x, SymAtom y]
+  | x==y = Just (SymAtom "T")
+  | otherwise = Just (SymAtom "F")
 apply_eq [x, y] = Nothing
 
 apply_plus :: [SExpression] -> Maybe (SExpression)
@@ -92,20 +97,28 @@ apply_rem [NumAtom x, NumAtom y]
   | otherwise = Nothing
 apply_rem [x, y] = Nothing
 
-apply_eqp :: [SExpression] -> Maybe (Bool)
-apply_eqp [NumAtom x, NumAtom y] = Just (x==y)
+apply_eqp :: [SExpression] -> Maybe (SExpression)
+apply_eqp [NumAtom x, NumAtom y]
+  | x==y = Just (SymAtom "T")
+  | otherwise = Just (SymAtom "F")
 apply_eqp [x, y] = Nothing
 
-apply_lessp :: [SExpression] -> Maybe (Bool)
-apply_lessp [NumAtom x, NumAtom y] = Just (x<y)
+apply_lessp :: [SExpression] -> Maybe (SExpression)
+apply_lessp [NumAtom x, NumAtom y]
+  | x<y = Just (SymAtom "T")
+  | otherwise = Just (SymAtom "F")
 apply_lessp [x, y] = Nothing
 
-apply_greaterp :: [SExpression] -> Maybe (Bool)
-apply_greaterp [NumAtom x, NumAtom y] = Just (x>y)
+apply_greaterp :: [SExpression] -> Maybe (SExpression)
+apply_greaterp [NumAtom x, NumAtom y]
+  | x<y = Just (SymAtom "T")
+  | otherwise = Just (SymAtom "F")
 apply_greaterp [x, y] = Nothing
 
-apply_sym_lessp :: [SExpression] -> Maybe (Bool)
-apply_sym_lessp [SymAtom x, SymAtom y] = Just (x<y)
+apply_sym_lessp :: [SExpression] -> Maybe (SExpression)
+apply_sym_lessp [SymAtom x, SymAtom y]
+  | x<y = Just (SymAtom "T")
+  | otherwise = Just (SymAtom "F")
 apply_sym_lessp [x, y] = Nothing
 
 ------------------------------------------------------------------------
@@ -135,18 +148,13 @@ atomToStr (SymAtom x) = x
 atomToStr (NumAtom x) = show x
 
 apply_implode :: [SExpression] -> Maybe (SExpression)
---implode_extend :: [SExpression] -> [SExpression]
-
 apply_implode [List (x)]
-  | fromJust (apply_numberp[(head x)]) = Nothing
-  | elem (Just True) (map apply_listp (map (:[]) x))  = Nothing
---  | otherwise = Just (SymAtom (intercalate "" [atomToStr x : implode_extend([List rest])]))
+  | (apply_numberp[(head x)]) == Just(SymAtom "T") = Nothing
+  | elem (Just (SymAtom "T")) (map apply_listp (map (:[]) x))  = Nothing
+  | otherwise = Just (SymAtom (intercalate "" (map atomToStr x)))
 apply_implode [x] = Nothing
 
---implode_extend [List (x:rest)]
---  | rest == [] = [
-  
 -----------------------------------------------------------------------------
 
-apply_error :: [SExpression] -> Maybe (String)
-apply_error [SymAtom x] = Just (show x)
+apply_error :: [SExpression] -> Maybe (SExpression)
+apply_error [SymAtom x] = error x
