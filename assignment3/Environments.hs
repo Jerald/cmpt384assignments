@@ -3,6 +3,8 @@
 --Requirements:
 --Contains functions for dealing with function and variable environments
 --Implements some as-of-yet undecided data structure to store said environments
+module Environments where
+
 
 import Data.List
 import Data.Maybe
@@ -32,107 +34,109 @@ treeToList tree = case tree of
   Tip -> []
   Node l v r -> treeToList(l) ++ [v] ++ treeToList(r)
   
+--add_association
+  
 --Implementing the 20 primitive functions of small lisp
 
-instance Eq SExpression where
-  (SymAtom x) == (SymAtom y) = x == y
+instance Eq SmLispExpr where
+  SExpr(SymAtom x) == SExpr(SymAtom y) = x == y
 
-apply_symbolp :: [SExpression] -> Maybe (SExpression)
-apply_symbolp [(SymAtom a)] = Just (SymAtom "T")
-apply_symbolp [a] = Just (SymAtom "F")
+apply_symbolp :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_symbolp [SExpr (SymAtom a)] = Just (SExpr (SymAtom "T"))
+apply_symbolp [a] = Just (SExpr (SymAtom "F"))
 
-apply_numberp :: [SExpression] -> Maybe (SExpression)
-apply_numberp [(NumAtom a)] = Just (SymAtom "T")
-apply_numberp [a] = Just (SymAtom "F")
+apply_numberp :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_numberp [SExpr (NumAtom a)] = Just (SExpr (SymAtom "T"))
+apply_numberp [a] = Just (SExpr (SymAtom "F"))
   
-apply_listp :: [SExpression] -> Maybe (SExpression)
-apply_listp [(List a)] = Just (SymAtom "T")
-apply_listp [a] = Just (SymAtom "F")
+apply_listp :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_listp [SExpr (List a)] = Just (SExpr (SymAtom "T"))
+apply_listp [a] = Just (SExpr (SymAtom "F"))
 
-apply_endp :: [SExpression] -> Maybe(SExpression)
-apply_endp [(List a)]
-  | null(a) = Just (SymAtom "T")
-  | otherwise = Just (SymAtom "F")
+apply_endp :: [SmLispExpr] -> Maybe(SmLispExpr)
+apply_endp [SExpr (List a)]
+  | null(a) = Just (SExpr (SymAtom "T"))
+  | otherwise = Just (SExpr (SymAtom "F"))
 apply_endp [a] = Nothing
 
-apply_first :: [SExpression] -> Maybe (SExpression)
-apply_first [List (a:rest)] = Just a
+apply_first :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_first [SExpr (List (a:rest))] = Just (SExpr a)
 apply_first [a] = Nothing
 
-apply_rest :: [SExpression] -> Maybe (SExpression)
-apply_rest [List (a:rest)] = Just (List rest)
+apply_rest :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_rest [SExpr (List (a:rest))] = Just ( SExpr (List rest))
 apply_rest [a] = Nothing
 
-apply_cons :: [SExpression] -> Maybe (SExpression)
-apply_cons [x, List y] = Just (List (x:y))
+apply_cons :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_cons [SExpr x, SExpr (List y)] = Just (SExpr (List (x:y)))
 apply_cons [x, y] = Nothing
 
-apply_eq :: [SExpression] -> Maybe (SExpression)
-apply_eq [SymAtom x, SymAtom y]
-  | x==y = Just (SymAtom "T")
-  | otherwise = Just (SymAtom "F")
+apply_eq :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_eq [SExpr (SymAtom x), SExpr (SymAtom y)]
+  | x==y = Just (SExpr (SymAtom "T"))
+  | otherwise = Just (SExpr (SymAtom "F"))
 apply_eq [x, y] = Nothing
 
-apply_plus :: [SExpression] -> Maybe (SExpression)
-apply_plus [NumAtom x, NumAtom y] = Just (NumAtom(x+y))
+apply_plus :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_plus [SExpr (NumAtom x), SExpr (NumAtom y)] = Just (SExpr (NumAtom(x+y)))
 apply_plus [x, y] = Nothing
 
-apply_minus :: [SExpression] -> Maybe (SExpression)
-apply_minus [NumAtom x, NumAtom y] = Just (NumAtom(x-y))
+apply_minus :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_minus [SExpr (NumAtom x), SExpr (NumAtom y)] = Just (SExpr (NumAtom(x-y)))
 apply_minus [x, y] = Nothing
 
-apply_times :: [SExpression] -> Maybe (SExpression)
-apply_times [NumAtom x, NumAtom y] = Just (NumAtom(x*y))
+apply_times :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_times [SExpr (NumAtom x), SExpr (NumAtom y)] = Just (SExpr (NumAtom(x*y)))
 apply_times [x, y] = Nothing
 
-apply_divide :: [SExpression] -> Maybe (SExpression)
-apply_divide [NumAtom x, NumAtom y]
-  | y /= 0 = Just (NumAtom(quot x y))
+apply_divide :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_divide [SExpr (NumAtom x), SExpr (NumAtom y)]
+  | y /= 0 = Just (SExpr (NumAtom(quot x y)))
   | otherwise = Nothing
 apply_divide [x, y] = Nothing
 
-apply_rem :: [SExpression] -> Maybe (SExpression)
-apply_rem [NumAtom x, NumAtom y]
-  | y /= 0 = Just (NumAtom(rem x y))
+apply_rem :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_rem [SExpr (NumAtom x), SExpr (NumAtom y)]
+  | y /= 0 = Just (SExpr (NumAtom(rem x y)))
   | otherwise = Nothing
 apply_rem [x, y] = Nothing
 
-apply_eqp :: [SExpression] -> Maybe (SExpression)
-apply_eqp [NumAtom x, NumAtom y]
-  | x==y = Just (SymAtom "T")
-  | otherwise = Just (SymAtom "F")
+apply_eqp :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_eqp [SExpr (NumAtom x), SExpr (NumAtom y)]
+  | x==y = Just (SExpr (SymAtom "T"))
+  | otherwise = Just (SExpr (SymAtom "F"))
 apply_eqp [x, y] = Nothing
 
-apply_lessp :: [SExpression] -> Maybe (SExpression)
-apply_lessp [NumAtom x, NumAtom y]
-  | x<y = Just (SymAtom "T")
-  | otherwise = Just (SymAtom "F")
+apply_lessp :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_lessp [SExpr (NumAtom x), SExpr (NumAtom y)]
+  | x<y = Just (SExpr (SymAtom "T"))
+  | otherwise = Just (SExpr (SymAtom "F"))
 apply_lessp [x, y] = Nothing
 
-apply_greaterp :: [SExpression] -> Maybe (SExpression)
-apply_greaterp [NumAtom x, NumAtom y]
-  | x<y = Just (SymAtom "T")
-  | otherwise = Just (SymAtom "F")
+apply_greaterp :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_greaterp [SExpr (NumAtom x), SExpr (NumAtom y)]
+  | x<y = Just (SExpr (SymAtom "T"))
+  | otherwise = Just (SExpr (SymAtom "F"))
 apply_greaterp [x, y] = Nothing
 
-apply_sym_lessp :: [SExpression] -> Maybe (SExpression)
-apply_sym_lessp [SymAtom x, SymAtom y]
-  | x<y = Just (SymAtom "T")
-  | otherwise = Just (SymAtom "F")
+apply_sym_lessp :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_sym_lessp [SExpr (SymAtom x), SExpr (SymAtom y)]
+  | x<y = Just (SExpr (SymAtom "T"))
+  | otherwise = Just (SExpr (SymAtom "F"))
 apply_sym_lessp [x, y] = Nothing
 
 ------------------------------------------------------------------------
 
-apply_explode :: [SExpression] -> Maybe (SExpression)
+apply_explode :: [SmLispExpr] -> Maybe (SmLispExpr)
 explode_extend :: [SExpression] -> [SExpression]
 
-apply_explode [SymAtom (x:rest)]
-  | rest == [] && isDigit(x) = Just (List[NumAtom (read[x])])
-  | rest == [] = Just (List[SymAtom [x]])
-  | isDigit(x) = Just (List(NumAtom (read [x]) : explode_extend([SymAtom rest])))
-  | otherwise = Just (List(SymAtom [x] : explode_extend([SymAtom rest])))
-apply_explode [SymAtom x]
-  | x == [] = Just (List[])
+apply_explode [SExpr (SymAtom (x:rest))]
+  | rest == [] && isDigit(x) = Just (SExpr (List[NumAtom (read[x])]))
+  | rest == [] = Just (SExpr (List[SymAtom [x]]))
+  | isDigit(x) = Just (SExpr (List(NumAtom (read [x]) : explode_extend([SymAtom rest]))))
+  | otherwise = Just (SExpr (List(SymAtom [x] : explode_extend([SymAtom rest]))))
+apply_explode [SExpr (SymAtom x)]
+  | x == [] = Just (SExpr (List[]))
   | otherwise = Nothing
 apply_explode [x] = Nothing
 
@@ -140,21 +144,21 @@ explode_extend [SymAtom (x:rest)]
   | rest == [] && isDigit(x) = [NumAtom (read[x])]
   | rest == [] = [SymAtom [x]]
   | isDigit(x) = (NumAtom (read[x]) : explode_extend([SymAtom rest]))
-  | otherwise = (SymAtom [x] : explode_extend([SymAtom rest]))
+  | otherwise = ((SymAtom [x] : explode_extend([SymAtom rest])))
   
 ---------------------------------------------------------------------------
 atomToStr:: SExpression -> [Char]
 atomToStr (SymAtom x) = x
 atomToStr (NumAtom x) = show x
 
-apply_implode :: [SExpression] -> Maybe (SExpression)
-apply_implode [List (x)]
-  | (apply_numberp[(head x)]) == Just(SymAtom "T") = Nothing
-  | elem (Just (SymAtom "T")) (map apply_listp (map (:[]) x))  = Nothing
-  | otherwise = Just (SymAtom (intercalate "" (map atomToStr x)))
+apply_implode :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_implode [SExpr (List (x))]
+  | apply_numberp[SExpr (head x)] == Just(SExpr (SymAtom "T")) = Nothing
+  | elem (Just (SExpr (SymAtom "T"))) (map apply_listp (map (:[]) (map SExpr x)))  = Nothing
+  | otherwise = Just (SExpr (SymAtom (intercalate "" (map atomToStr x))))
 apply_implode [x] = Nothing
 
 -----------------------------------------------------------------------------
 
-apply_error :: [SExpression] -> Maybe (SExpression)
-apply_error [SymAtom x] = error x
+apply_error :: [SmLispExpr] -> Maybe (SmLispExpr)
+apply_error [SExpr (SymAtom x)] = error x
