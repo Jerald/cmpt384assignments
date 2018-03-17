@@ -145,8 +145,8 @@ verifyArgLen (args) =
 endLetExpr :: [Token] -> [LocalDef] -> (Maybe SmLispExpr, [Token])
 endLetExpr tx defs =
     case parseSmLispExpr tx of
-        (Just expr, more) -> (Just (LetExpr defs expr), more)
-        (Nothing, more) -> (Nothing, more)    
+        (Just expr, RBrace:more) -> (Just (LetExpr defs expr), more)
+        (_, more) -> (Nothing, more)    
         
 parseLocalDef :: [Token] -> (Maybe LocalDef, [Token])
 parseLocalDef ((AlphaNumToken alph):Equal:tx) = 
@@ -192,7 +192,6 @@ extendCondClause tx expr =
 
 
 extendCondExpr :: [Token] -> SmLispExpr -> (Maybe SmLispExpr, [Token])
-extendCondExpr [] _ = (Nothing, [])
 extendCondExpr (Semicolon:tx) (CondExpr clauses) =
     case parseCondClause tx of
         (Just clause, more)    -> extendCondExpr more (CondExpr (clauses ++ (clause:[])))
@@ -226,6 +225,7 @@ extendParam         :: [Token] -> [Identifier] -> (Maybe Definition, [Token])
 parseSmLispProgram (Just tx) = buildDefinition tx []
 parseSmLispProgram (Nothing) = (Nothing, [])
 
+buildDefinition [] program = (Just program, [])
 buildDefinition tx program =
     case (parseDefinition tx) of
         (Just def, more)    -> buildDefinition more (program ++ (def:[]))
@@ -237,6 +237,9 @@ parseDefinition ((AlphaNumToken t):tx)
     | head tx == LBrack = parseFuncDef (tail tx) ident
     | otherwise         = (Nothing, ((AlphaNumToken ident):tx))
     where (Just ident, _) = parseIdentifier ((AlphaNumToken t):[])
+
+parseDefinition ((Comment comm):tx) = 
+    parseDefinition tx
 
 parseDefinition tx = (Nothing, tx)
 

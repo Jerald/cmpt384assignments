@@ -16,8 +16,8 @@ val_env = Tip
 
 --Function definition is wrong, should be FnCall BSTree a -> BSTree b -> Maybe (SExpression)
 --Unsure how to convert a 'variable' into a 'SExpression' type
-sl_apply :: [Char] -> SExpression -> BSTree a -> BSTree b -> Maybe (SExpression)
-sl_apply callee (List args) fn_env val_env
+sl_apply :: SmLispExpr -> BSTree a -> BSTree b -> Maybe (SmLispExpr)
+sl_apply (FnCall callee args) fn_env val_env
   | callee == "first" = apply_first[args!!0]
   | callee == "rest" = apply_rest[args!!0]
   | callee == "endp" = apply_endp[args!!0]
@@ -51,7 +51,7 @@ main = do
     print (parseSExpression(fromMaybe [] (tokenizeMain(['\n'] ++srcText))))
 
 interactive :: [Char] -> (Maybe SmLispExpr, [Token])
-interactive tx =
-    case tokenizeMain tx of
-        (Just tokens)    -> parseSmLispExpr tokens
-        (Nothing)        -> (Nothing, [])
+interactive tx = parseExpression (tokenizeMain tx)
+
+definitionGen :: [Char] -> (Maybe SmLispProgram, [Token])
+definitionGen tx = parseSmLispProgram (tokenizeMain tx)
