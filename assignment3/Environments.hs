@@ -16,23 +16,20 @@ import Control.Exception
 --To represent environments for our small lisp interpreter, we will be using a binary search tree, with each
 --node represented as a key-value pair
 
--- data BSTree a = Tip | Node (BSTree a) (a, a) (BSTree a) deriving (Show, Eq)
-
 type Node = (Identifier, Definition)
 data Tree = Branch Tree Node Tree | Empty deriving (Show, Eq)
 
--- Inserts a node into a tree
 treeInsert :: Tree -> Node -> Tree
-treeInsert Empty newNode@(ident, def) = Branch Empty node Empty
-treeInsert (Branch left node@(ident, def) right) newNode@(newIdent, newDef) = 
-    | newIdent == ident = Branch (left newNode right)
+treeInsert Empty newNode@(ident, def) = Branch Empty newNode Empty
+treeInsert (Branch left node@(ident, def) right) newNode@(newIdent, newDef)
+    | newIdent == ident = Branch left newNode right
     | newIdent <  ident = Branch (treeInsert left newNode) node right
     | newIdent >  ident = Branch left node (treeInsert right newNode)
     | otherwise         = error("God is dead, strings don't compare to strings")
 
 treeLookup :: Tree -> Identifier -> Maybe Definition
 treeLookup Empty ident = Nothing
-treeLookup (Branch left node@(ident def) right) fIdent
+treeLookup (Branch left node@(ident, def) right) fIdent
     | fIdent == ident = Just def
     | fIdent  < ident = treeLookup left fIdent
     | fIdent  > ident = treeLookup right fIdent
@@ -41,31 +38,8 @@ treeLookup (Branch left node@(ident def) right) fIdent
 treeToList :: Tree -> [Node]
 treeToList Empty = []
 treeToList (Branch left node right) = (treeToList left) ++ (node:[]) ++ (treeToList right)
-
--- treeInsert:: (Ord a) => BSTree a -> (a, a) -> BSTree a
--- treeInsert Tip (new_key, new_value) = Node Tip (new_key, new_value) Tip
--- treeInsert (Node l (cur_key, cur_value) r) (new_key, new_value)
---   | new_key <= cur_key = Node (treeInsert l (new_key, new_value)) (cur_key, cur_value) r
---   | otherwise = Node l (cur_key, cur_value) (treeInsert r (new_key, new_value))
-
--- treeLookup:: (Ord a) => BSTree a -> a -> Maybe (a)
--- treeLookup Tip key = Nothing
--- treeLookup (Node l (cur_key, cur_value) r) key
---   | key == cur_key = Just cur_value
---   | key <= cur_key = treeLookup l key
---   | otherwise = treeLookup r key
-  
--- treeToList:: BSTree a -> [(a, a)]
--- treeToList tree = case tree of
---   Tip -> []
---   Node l v r -> treeToList(l) ++ [v] ++ treeToList(r)
-  
---add_association
   
 --Implementing the 20 primitive functions of small lisp
-
-instance Eq SmLispExpr where
-  SExpr(SymAtom x) == SExpr(SymAtom y) = x == y
 
 apply_symbolp :: [SmLispExpr] -> Maybe (SmLispExpr)
 apply_symbolp [SExpr (SymAtom a)] = Just (SExpr (SymAtom "T"))
