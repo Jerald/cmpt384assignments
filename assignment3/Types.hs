@@ -39,17 +39,17 @@ data Token = Comment [Char] | NumToken Int | AlphaNumToken [Char] | SpecialToken
 -- <list>                   ::= '(' {<S-expression>} ')'
 -- <numeric-atom>           = -?[0-9]+
 -- <symbolic-atom>          = [A-Za-z](-?[A-Za-z0-9])*|[+-*/<>=&|!@#$%?:]+
-data SExpression = NumAtom Int | SymAtom [Char] | List [SExpression] deriving Show
+data SExpression = NumAtom Int | SymAtom [Char] | List [SExpression] deriving (Show, Eq)
 
 -- Some grouping of alpha-numeric things which starts with a letter and can contain dashes
 -- Defines: <identifier>    = [A-Za-z](-?[A-Za-z0-9])*
 type Identifier = [Char]
 
 -- <clause>                 ::= <expression> '-->' <expression>
-data CondClause = Clause SmLispExpr SmLispExpr deriving Show
+data CondClause = Clause SmLispExpr SmLispExpr deriving (Show, Eq)
 
 -- <local-definition>       ::= <identifier> '=' <expression>
-data LocalDef = Binding Identifier SmLispExpr deriving Show
+data LocalDef = Binding Identifier SmLispExpr deriving (Show, Eq)
 
 -- Defines: <expression>    ::= <value> | <variable> | <function-call> | <conditional-expression> | <let-expression>
 -- <value>                  ::= <numeric-atom> | '"' <symbolic-atom> '"' | <list>
@@ -60,7 +60,7 @@ data LocalDef = Binding Identifier SmLispExpr deriving Show
 -- <map-expression>         ::= '@' <function-name> '[' expression> {';' <expression>} ']'
 -- <reduce-expression>      ::= '!' <function-name> '[' <expression> ']'
 data SmLispExpr = SExpr SExpression | Variable Identifier | FnCall Identifier [SmLispExpr] | CondExpr [CondClause] | LetExpr [LocalDef] SmLispExpr
-                    | MapExpr Identifier [SExpression] | ReduceExpr Identifier SmLispExpr  deriving Show
+                    | MapExpr Identifier [SExpression] | ReduceExpr Identifier SmLispExpr  deriving (Show, Eq)
 -- Conditional Expression: returns the first LHS value which evaluates to T, or returns null if any LHS evaluates to a non-boolean value. Returns false if no LHS is true.
 -- Let Expression: evaluates the provided expression in the context of the local-definitions being applied. If any definition evaluates to null, returns null.
 
@@ -68,7 +68,7 @@ data SmLispExpr = SExpr SExpression | Variable Identifier | FnCall Identifier [S
 -- <constant-definition>    ::= [<comment>] <identifier> '=' <expression>
 -- <function-definition>    ::= [<comment>] <identifier> '[' <parameter> {';' <parameter> }']' '=' <expression>
 -- <parameter>              ::= <identifier>
-data Definition = ConstantDef Identifier SmLispExpr | FunctionDef Identifier [Identifier] SmLispExpr deriving Show
+data Definition = ConstantDef Identifier SmLispExpr | FunctionDef Identifier [Identifier] SmLispExpr deriving (Show, Eq)
 
 -- A SLisp "program" is simply defined as a list of definitions.
 -- This "program" is then used as the context by which to evaluate the literal passed program.
