@@ -112,10 +112,12 @@ add_associations env (param:restp) (arg:resta)
 main = do
     fileName <- getArgs
     srcText <- readFile (head fileName)
-    -- Output from Tokenizer
-    --print (tokenizeMain(['\n'] ++srcText))
-    -- Output from Parser
-    print (parseSExpression(fromMaybe [] (tokenizeMain(['\n'] ++srcText))))
+    toks <- return (tokenizeMain(['\n'] ++srcText))
+    (prog,garb) <- return (parseSmLispProgram toks)
+    putStrLn "Enter line to be parsed"
+    line <- getLine
+    (expr,garb) <- return (parseSmLispExpr (fromMaybe [] (tokenizeMain ( "\n"++ line ++ "\n"))))
+    print ((interpret (fromMaybe [] prog) (fromMaybe (Variable "") expr)))
 
 interactive :: [Char] -> (Maybe SmLispExpr, [Token])
 interactive tx = parseExpression (tokenizeMain tx)
@@ -123,18 +125,20 @@ interactive tx = parseExpression (tokenizeMain tx)
 definitionGen :: [Char] -> (Maybe SmLispProgram, [Token])
 definitionGen tx = parseSmLispProgram (tokenizeMain tx)
 
-interpret :: [Definition] -> SmLispExpr  -> SExpression
+interpret :: SmLispProgram-> SmLispExpr  -> SExpression
 interpret defs expr = setup_envs_then_eval Empty (extend_env (extend_env (extend_env Empty "F" (ConstantDef "F" (Variable "F"))) "T" (ConstantDef "T" (Variable "T"))) "Otherwise" (ConstantDef "T" (Variable "T"))) defs expr
 
 
 
-setup_envs_then_eval :: Tree -> Tree -> [Definition] -> SmLispExpr  -> SExpression
-setup_envs_then_eval fn_env val_env [] expr = sl_eval expr fn_env (mark_global_frame(val_env))
+setup_envs_then_eval :: Tree -> Tree -> SmLispProgram -> SmLispExpr  -> SExpression
+
 setup_envs_then_eval fn_env val_env (headDef@(ConstantDef iden def):rest) expr
   | iden == "defunc"     = setup_envs_then_eval (extend_func_env fn_env iden def) val_env rest expr
   | iden == "setc"       = setup_envs_then_eval fn_env (extend_env val_env iden (ConstantDef iden (SExpr (sl_eval def fn_env val_env)))) rest expr
+  | otherwise            =  sl_eval expr fn_env (mark_global_frame(val_env))
 
-
+setup_envs_then_eval fn_env val_env [] expr = sl_eval expr fn_env (mark_global_frame(val_env))
+setup_envs_then_eval fn_env val_env a expr = sl_eval expr fn_env (mark_global_frame(val_env))
 extend_func_env :: Tree -> Identifier -> SmLispExpr -> Tree
 extend_func_env env@(Branch l headNode@(headId,headDef) r) name value
   | env == Empty                    = (Branch Empty (name, (ConstantDef name value)) Empty)
