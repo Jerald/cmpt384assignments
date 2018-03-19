@@ -39,7 +39,7 @@ data Token = Comment [Char] | NumToken Int | AlphaNumToken [Char] | SpecialToken
 -- <list>                   ::= '(' {<S-expression>} ')'
 -- <numeric-atom>           = -?[0-9]+
 -- <symbolic-atom>          = [A-Za-z](-?[A-Za-z0-9])*|[+-*/<>=&|!@#$%?:]+
-data SExpression = NumAtom Int | SymAtom [Char] | List [SExpression] deriving (Show, Eq)
+data SExpression = NumAtom Int | SymAtom [Char] | List [SExpression] deriving (Show, Eq, Ord)
 
 -- Some grouping of alpha-numeric things which starts with a letter and can contain dashes
 -- Defines: <identifier>    = [A-Za-z](-?[A-Za-z0-9])*

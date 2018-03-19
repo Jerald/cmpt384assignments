@@ -32,12 +32,12 @@ apply_env env name =
     Just(ConstantDef ident (SExpr x)) -> x
 
 --reset_to_global_frame:: Tree -> Tree
---reset_to_global_frame env = 
+--reset_to_global_frame env =
 
 sl_evlis:: [SmLispExpr] -> Tree -> Tree -> [SmLispExpr]
 sl_evlis expr fn_env value_env = map SExpr (map ($value_env) (map ($fn_env) (map (sl_eval) expr)))
 
---TO DO: Implement sl_evcond using a suitable predicate iteration function from the Haskell library. 
+--TO DO: Implement sl_evcond using a suitable predicate iteration function from the Haskell library.
 sl_evcond:: [CondClause] -> Tree -> Tree -> SExpression
 sl_evcond ((Clause pred res):rest) fn_env value_env
   | sl_eval pred fn_env value_env == SymAtom "T" = sl_eval res fn_env value_env
@@ -48,7 +48,7 @@ extend_local_env:: Tree -> Tree -> [LocalDef] -> Tree
 extend_local_env fn_env value_env ((Binding ident expr):rest)
   | rest == [] = extend_env value_env ident (ConstantDef ident (SExpr(sl_eval expr fn_env value_env)))
   | otherwise  = extend_env (extend_local_env fn_env value_env rest) ident (ConstantDef ident (SExpr(sl_eval expr fn_env value_env)))
-  
+
 lexprToSexpr:: [SmLispExpr] -> SExpression
 extender:: [SmLispExpr] -> [SExpression]
 
@@ -60,12 +60,12 @@ lexprToSexpr ((SExpr a): rest)
 extender ((SExpr a): rest)
   | rest == [] = [a]
   | otherwise  = [a] ++ (extender rest)
-  
+
 mapOp:: Identifier -> [SmLispExpr] -> Tree -> Tree -> [SmLispExpr]
-mapOp func lists fn_env value_env 
+mapOp func lists fn_env value_env
   | elem (Just (SExpr (List[]))) (map apply_rest (map (:[])lists)) = [fromJust (sl_apply func (map fromJust (map apply_first (map (:[]) lists))) fn_env value_env)]
   | otherwise = [fromJust (sl_apply func (map fromJust (map apply_first (map (:[]) lists))) fn_env value_env)] ++ mapOp func (map fromJust (map apply_rest (map (:[])lists))) fn_env value_env
-  
+
 reduceOp:: Identifier -> [SmLispExpr] -> Tree -> Tree -> SExpression
 reduceOp func [SExpr (List [])] fn_env value_env = error("Not a valid list for reducing")
 reduceOp func [SExpr (List (a:b:rest))] fn_env value_env
@@ -96,7 +96,7 @@ sl_apply callee (arg:rest) fn_env value_env
   | callee == "implode" = apply_implode[arg]
   | callee == "error" = apply_error[arg]
   | otherwise = Just (SExpr(sl_eval (fst(apply_fn_env fn_env callee)) fn_env (add_associations value_env (snd(apply_fn_env fn_env callee)) (arg:rest))))
-  
+
 apply_fn_env :: Tree -> Identifier -> (SmLispExpr, [Identifier])
 apply_fn_env env name =
   case treeLookup env name of
@@ -123,41 +123,31 @@ interactive tx = parseExpression (tokenizeMain tx)
 definitionGen :: [Char] -> (Maybe SmLispProgram, [Token])
 definitionGen tx = parseSmLispProgram (tokenizeMain tx)
 
-interpret :: Definition -> Expression -> Maybe SExpression
-interpret defs expr = setup_envs_then_eva(Empty, extend_env(extend_env(extend_env(Empty "F" "F") "T" "T") "Otherwise" "T") defs expr )
+interpret :: [Definition] -> SmLispExpr  -> SExpression
+interpret defs expr = setup_envs_then_eval Empty (extend_env (extend_env (extend_env Empty "F" (ConstantDef "F" (Variable "F"))) "T" (ConstantDef "T" (Variable "T"))) "Otherwise" (ConstantDef "T" (Variable "T"))) defs expr
 
-extend_env :: Tree -> Identifier -> Definition -> Tree
-extend_env end ident def = treeInsert env (ident,def)
 
-setup_envs_then_eval :: Tree -> Tree -> [Char] -> [Char] -> Maybe SExpression
-setup_envs_then_eval fn_env val_env defs expr =
-  | null(defs) = sl_eval(expr fn_env mark_global_frame(val_env))
-  |
-  |
 
-key :: Tree -> Node
-key tree = tree !! 0
+setup_envs_then_eval :: Tree -> Tree -> [Definition] -> SmLispExpr  -> SExpression
+setup_envs_then_eval fn_env val_env [] expr = sl_eval expr fn_env (mark_global_frame(val_env))
+setup_envs_then_eval fn_env val_env (headDef@(ConstantDef iden def):rest) expr
+  | iden == "defunc"     = setup_envs_then_eval (extend_func_env fn_env iden def) val_env rest expr
+  | iden == "setc"       = setup_envs_then_eval fn_env (extend_env val_env iden (ConstantDef iden (SExpr (sl_eval def fn_env val_env)))) rest expr
 
-left_env :: Tree -> Node
-left_env tree = tree !! 1
 
-right_env :: Tree -> Node
-right_env tree = tree !! 2
+extend_func_env :: Tree -> Identifier -> SmLispExpr -> Tree
+extend_func_env env@(Branch l headNode@(headId,headDef) r) name value
+  | env == Empty                    = (Branch Empty (name, (ConstantDef name value)) Empty)
+  | name == headId                  = (Branch l (name, (ConstantDef name value)) r)
+  | (SymAtom name) < (SymAtom headId) = (Branch (extend_func_env l name value) headNode r)
+  | otherwise                       = (Branch l headNode (extend_func_env r name value) )
 
-key_value :: Tree -> Node
-key_value tree = tree !! 3
 
-local_frame :: Tree -> Node
-local_frame env = env !! 0
-
-global_frame :: Tree -> Node
-global_frame env = env !! 1
 
 mark_global_frame :: Tree -> Tree
-mark_global_frame env = make_value_env(Empty local_frame(env))
+mark_global_frame Empty = Empty
+mark_global_frame (Branch l node r) = l
 
 reset_to_global_frame :: Tree -> Tree
-reset_to_global_frame env = make_value_env(Empty global_frame(env))
-
-make_value_env :: Tree ->Tree -> Tree
-make_value_env l_frame g_frame = l_frame++g_frame
+reset_to_global_frame Empty = Empty
+reset_to_global_frame (Branch l node r) = r
