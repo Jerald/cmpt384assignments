@@ -4,6 +4,7 @@
 import Tokenizer
 import Parser
 import Data.Maybe
+import Data.List
 import Environments
 import Types
 
@@ -15,7 +16,7 @@ sl_eval (Variable ident)        fn_env value_env  = apply_env value_env ident
 sl_eval (SExpr (NumAtom x))     fn_env value_env  = NumAtom x
 sl_eval (SExpr (SymAtom str))   fn_env value_env  = SymAtom str
 sl_eval (SExpr (List x))        fn_env value_env  = List x
-sl_eval (FnCall ident args)     fn_env value_env  = SymAtom "T"--sl_apply ident (sl_evlis args fn_env value_env) fn_env (reset_to_global_frame value_env)
+sl_eval (FnCall ident args)     fn_env value_env  = lexprToSexpr[fromJust (sl_apply ident (sl_evlis args fn_env value_env) fn_env (reset_to_global_frame value_env))]
 sl_eval (CondExpr clauses)      fn_env value_env  = sl_evcond clauses fn_env value_env
 sl_eval (LetExpr defs expr)     fn_env value_env  = sl_eval expr fn_env (extend_local_env fn_env value_env defs)
 sl_eval (MapExpr ident sexprl)  fn_env value_env  = lexprToSexpr(mapOp ident (sl_evlis (map SExpr sexprl) fn_env value_env) fn_env value_env)
@@ -31,18 +32,17 @@ apply_env env name =
     Nothing                           -> error("Undefined symbol -->" ++ name)
     Just(ConstantDef ident (SExpr x)) -> x
 
---reset_to_global_frame:: Tree -> Tree
---reset_to_global_frame env =
-
 sl_evlis:: [SmLispExpr] -> Tree -> Tree -> [SmLispExpr]
 sl_evlis expr fn_env value_env = map SExpr (map ($value_env) (map ($fn_env) (map (sl_eval) expr)))
 
---TO DO: Implement sl_evcond using a suitable predicate iteration function from the Haskell library.
+getPred:: CondClause -> SmLispExpr
+getPred (Clause pred res) = pred
+
+getRes:: CondClause -> SmLispExpr
+getRes (Clause pred res) = res
+
 sl_evcond:: [CondClause] -> Tree -> Tree -> SExpression
-sl_evcond ((Clause pred res):rest) fn_env value_env
-  | sl_eval pred fn_env value_env == SymAtom "T" = sl_eval res fn_env value_env
-  | rest == [] = error("Error in conditional expression -- no true predicate")
-  | otherwise  = sl_evcond rest fn_env value_env
+sl_evcond clauses fn_env value_env = sl_eval (getRes(clauses!!(fromJust (findIndex (== SExpr(SymAtom "T")) (sl_evlis (map getPred clauses) fn_env value_env))))) fn_env value_env
 
 extend_local_env:: Tree -> Tree -> [LocalDef] -> Tree
 extend_local_env fn_env value_env ((Binding ident expr):rest)
@@ -61,8 +61,19 @@ extender ((SExpr a): rest)
   | rest == [] = [a]
   | otherwise  = [a] ++ (extender rest)
 
+allItemsSame:: (Eq a) => [a] -> Bool
+allItemsSame items = and $ map (== head items) (tail items)
+
+listLength:: SmLispExpr -> Int
+listLength (SExpr (List a))  = length a
+
 mapOp:: Identifier -> [SmLispExpr] -> Tree -> Tree -> [SmLispExpr]
 mapOp func lists fn_env value_env
+  | (func == "first" || func == "rest" || func == "endp" || func == "numberp" || func == "symbolp" || func == "listp" || func == "explode" || func == "implode") && (length lists /= 1) = error("Num argument lists /= num arguments for function")
+  | (func == "eq" || func == "cons" || func == "plus" || func == "minus" || func == "times" || func == "divide" ) && (length lists /= 2) = error("Num argument lists /= num arguments for function")
+  | (func == "lessp" || func == "greaterp" || func == "sym-lessp"|| func == "rem" || func == "eqp") && (length lists /= 2) = error("Num argument lists /= num arguments for function")
+  | (length(snd(apply_fn_env fn_env func))) /= length lists = error("Num argument lists /= num arguments for function")
+  | (allItemsSame (map listLength lists)) /= True = error("Arguments list have different sizes")
   | elem (Just (SExpr (List[]))) (map apply_rest (map (:[])lists)) = [fromJust (sl_apply func (map fromJust (map apply_first (map (:[]) lists))) fn_env value_env)]
   | otherwise = [fromJust (sl_apply func (map fromJust (map apply_first (map (:[]) lists))) fn_env value_env)] ++ mapOp func (map fromJust (map apply_rest (map (:[])lists))) fn_env value_env
 
@@ -70,7 +81,7 @@ reduceOp:: Identifier -> [SmLispExpr] -> Tree -> Tree -> SExpression
 reduceOp func [SExpr (List [])] fn_env value_env = error("Not a valid list for reducing")
 reduceOp func [SExpr (List (a:b:rest))] fn_env value_env
   | rest == [] = lexprToSexpr([fromJust(sl_apply func [SExpr a, SExpr b] fn_env value_env)])
-  | otherwise  = reduceOp func [SExpr(List([   lexprToSexpr[fromJust(sl_apply func [SExpr a, SExpr b] fn_env value_env)]   ] ++ rest))] fn_env value_env
+  | otherwise  = reduceOp func [SExpr(List([lexprToSexpr[fromJust(sl_apply func [SExpr a, SExpr b] fn_env value_env)]] ++ rest))] fn_env value_env
 --------------------------------------------------------------------------------------------
 
 sl_apply :: Identifier -> [SmLispExpr] -> Tree -> Tree -> Maybe (SmLispExpr)
