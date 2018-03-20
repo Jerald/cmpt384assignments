@@ -56,7 +56,7 @@ apply_numberp _                         = Nothing
 -- Returns T if the input is a List, F if a NumAtom or SymAtom. Nothing otherwise.
 apply_listp :: [SmLispExpr] -> Maybe (SmLispExpr)
 apply_listp [SExpr (List a)]            = Just (SExpr (SymAtom "T"))
-apply_listp [SExpr a)]                  = Just (SExpr (SymAtom "F"))
+apply_listp [SExpr a]                  = Just (SExpr (SymAtom "F"))
 apply_listp _                           = Nothing
 
 -- Returns T if the input is empty, F if not.  Nothing otherwise.
