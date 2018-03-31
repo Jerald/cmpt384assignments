@@ -36,5 +36,6 @@ tokenizeMain (tokens, (c:cs:csx))
     | c == '('              = tokOut tokens cx LBrack
     | c == ')'              = tokOut tokens cx RBrack
     | c == '|' && cs == '-' = tokOut tokens csx Turnstile
+    | c == ','              = tokOut tokens cx Comma
     | otherwise             = tokenizeMain (tokens, cx)  -- Skip the invalid token
     where cx = (cs:csx)

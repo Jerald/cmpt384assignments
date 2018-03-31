@@ -11,7 +11,8 @@ module Types where
 -- <LBrack> is a left bracket, "("
 -- <RBrack> is a right bracket, ")"
 -- <Turnstile> is the "|-" characters. It's used to separate hypothesis and goals.
-data Token = Letter Char | Arrow | Hat | Tilde | Vee | Equal | LBrack | RBrack | Turnstile deriving Show
+-- <Comma> is a comma, ",". It can be used to deliniate formulas. Optional to implement. See notes at top of Prover.hs
+data Token = Letter Char | Arrow | Hat | Tilde | Vee | Equal | LBrack | RBrack | Turnstile | Comma deriving Show
 
 -- Propositional Formula data type
 data PF = Prop Char | Neg PF | Conj PF PF | Disj PF PF | Imp PF PF | Equiv PF PF deriving Show
