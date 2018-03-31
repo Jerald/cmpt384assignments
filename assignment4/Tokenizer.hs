@@ -5,7 +5,7 @@ module Tokenizer where
 import Types
 import Data.Char
 
--- Main entry point for tokenizeation
+-- Main entry point for tokenization
 tokenize :: [Char] -> [Token]
 tokenize input =
     case tokenizeMain ([], input) of
