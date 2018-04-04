@@ -11,8 +11,10 @@
 
 module Prover where
 
+
 import Types
 import Data.List
+import Data.Maybe
 -- COVER EDGE CASE FOR EMPTY HYPOTHESES LIST AT EACH STEP
 -- (Cover it for goals too, but less angrily)
 
@@ -115,6 +117,20 @@ wangStep proof
   | wang1(proof) == Just True = Just []
   | wang1(proof) == Just False= Nothing
   | otherwise                 = Just (wangReduce(proof))
+
+wangMain :: [ProofConjecture] -> Bool
+
+wangMain([]) = True
+wangMain(proof:[])
+  | wangStep(proof) == Nothing = False
+  | wangStep(proof) == Just [] = True
+  | otherwise                  = wangMain(fromMaybe [] (wangStep(proof)))
+wangMain (proof:rest)
+  | wangStep(proof) == Nothing = False
+  | otherwise                  = wangMain(rest++(fromMaybe [] (wangStep(proof))))
+
+
+
 -- Selects and performs a reduction step on a conjecture
 wangReduce :: ProofConjecture -> [ProofConjecture]
 
