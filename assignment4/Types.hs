@@ -15,9 +15,8 @@ module Types where
 data Token = Letter Char | Arrow | Hat | Tilde | Vee | Equal | LBrack | RBrack | Turnstile | Comma deriving Show
 
 -- Propositional Formula data type
-data PF = Prop Char | Neg PF | Conj PF PF | Disj PF PF | Imp PF PF | Equiv PF PF deriving Show
+data PF = Prop Char | Neg PF | Conj PF PF | Disj PF PF | Imp PF PF | Equiv PF PF deriving (Show, Eq)
 
 -- Represents a proof conjecture
 -- The first list is the hypotheses, the second is the goals
-data ProofConjecture = Conjecture [PF] [PF] deriving Show
-
+data ProofConjecture = Conjecture [PF] [PF] deriving (Show)

@@ -11,13 +11,25 @@
 
 module Prover where
 
+import Types
+import Data.List
 -- COVER EDGE CASE FOR EMPTY HYPOTHESES LIST AT EACH STEP
 -- (Cover it for goals too, but less angrily)
 
 -- Rule 1a: if the goal list has a proposition that is also in the hypothesis list, the conjecture is true.
 -- Rule 1b: if both the goal list and hypothesis list contain propositions only, and no common propositions, the conjecture is disproven.
 -- True indicates success, false indicates failure. Nothing indicates unknown.
+
+isJustProp :: [PF] -> Bool
+isJustProp([]) = True
+isJustProp ((Prop cur):rest) = isJustProp(rest)
+isJustProp (rest) = False
+
 wang1 :: ProofConjecture -> Maybe Bool
+wang1 proof@(Conjecture hypos goals)
+   | (length (intersect hypos goals)) == 0 = Just True
+   | isJustProp(hypos) && isJustProp(goals)= Just False
+   | otherwise                             = Nothing
 
 -- Rule 2a: H, ~f |- G reduces to H |- G,f
 -- Rule 2b: H |- G, ~f reduces to H, f |- G
@@ -84,14 +96,14 @@ wang6 proof = error("Prover logic error in wang 6 :(")
     A proof conjecture is proven or disproven as follows.
 
     1. We form a list of conjectures to be proven, initially consisting of just the one given conjecture.
-    
+
     2. In each step, we take one conjecture from the list and proceed as follows:
 
     - If the conjecture is proven by Rule 1a, we remove it from the list of conjectures. If there are no more conjectures, then the process is complete and the proof succeeds.
     - If the conjecture is disproven by Rule 1b, then the process is complete and the proof fails.
 
     - Otherwise, we choose a composite formula from either the hypothesis or goal lists to apply a reduction step.
-    
+
     - The reduction step uses one of the rules 2a through 6b to generate one or two new conjectures.
     - The new conjectures are added to the conjecture list and we repeat the overall process.
 -}
@@ -99,7 +111,10 @@ wang6 proof = error("Prover logic error in wang 6 :(")
 -- Performs one iteration of step 2 of the above process
 -- Returns either the 1 or 2 new conjectures to add, no conjectures to show a success, or Nothing to show a fail.
 wangStep :: ProofConjecture -> Maybe [ProofConjecture]
-
+wangStep proof
+  | wang1(proof) == Just True = Just []
+  | wang1(proof) == Just False= Nothing
+  | otherwise                 = Just (wangReduce(proof))
 -- Selects and performs a reduction step on a conjecture
 wangReduce :: ProofConjecture -> [ProofConjecture]
 
@@ -129,6 +144,3 @@ wangReduce proof@(Conjecture hypos@(h:hx) goals@((Equiv pf1 pf2):gx)) =
 wangReduce proof@(Conjecture hypos@(hx) goals@([])) = []
 -- No more hypotheses, we're dead somehow. Failure state.
 wangReduce proof@(Conjecture hypos@([]) goals@(gx)) = []
-
-
-
