@@ -1,4 +1,3 @@
-
 -- For parsing our token stream
 -- Proposed BNF Grammar:
 -- <statement>  ::= <atom> | "(" <statement> ")" | <statement> <connector> <statement> | ~<statement>
@@ -41,14 +40,47 @@ parseMain tokens =
 
 parseStatement :: [Token] -> (PF, [Token])
 parseAtom :: [Token] -> (PF, [Token])
+parseGroup :: [Token] -> Int -> (PF, [Token])
 
 parseStatement (LBrack:rest) = 
-    case parseStatement rest of
-        (res, RBrack:even_more) -> (Group res, even_more)
+    case parseGroup rest 0 of
+        (res, Arrow:rest) ->
+            case parseStatement(rest) of
+                (res1, even_more) -> (Imp res res1, even_more)
+
+        (res, Hat:rest)   ->
+            case parseStatement(rest) of
+                (res1, even_more) -> (Conj res res1, even_more)
+
+        (res, Vee:rest)   ->
+            case parseStatement(rest) of
+                (res1, even_more) -> (Disj res res1, even_more)
+
+        (res, Equal:rest) ->
+            case parseStatement(rest) of
+                (res1, even_more) -> (Equiv res res1, even_more)
+
+        (res, rest)       -> (res, rest)
 
 parseStatement (Tilde:LBrack:rest) = 
-    case parseStatement rest of
-        (res, RBrack:even_more) -> (Neg (Group res), even_more)
+    case parseGroup rest 1 of
+        (res, Arrow:rest) ->
+            case parseStatement(rest) of
+                (res1, even_more) -> (Imp res res1, even_more)
+
+        (res, Hat:rest)   ->
+            case parseStatement(rest) of
+                (res1, even_more) -> (Conj res res1, even_more)
+
+        (res, Vee:rest)   ->
+            case parseStatement(rest) of
+                (res1, even_more) -> (Disj res res1, even_more)
+
+        (res, Equal:rest) ->
+            case parseStatement(rest) of
+                (res1, even_more) -> (Equiv res res1, even_more)
+
+        (res, rest)       -> (res, rest)
 
 parseStatement tokens = 
     case parseAtom tokens of
@@ -70,5 +102,14 @@ parseStatement tokens =
 
         (res, rest)       -> (res, rest)
 
+
 parseAtom (Letter x:rest) = (Prop x, rest)
 parseAtom (Tilde:Letter x:rest) = (Neg(Prop x), rest)
+
+parseGroup tokens 0 = 
+    case parseStatement tokens of
+        (res, RBrack:even_more) -> (Group res, even_more)
+
+parseGroup tokens 1 = 
+    case parseStatement tokens of
+        (res, RBrack:even_more) -> (Neg (Group res), even_more)
